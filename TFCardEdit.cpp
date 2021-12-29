@@ -2,6 +2,9 @@
 // by Xan
 
 #include <iostream>
+#include <algorithm>
+#include <string>
+using namespace std;
 
 #define TF1_MINCARD_INTID 4000
 #define TF1_MINCARD_ID 4007
@@ -260,7 +263,12 @@ wchar_t FolderNameWide[1024];
 char OutTextName[1024];
 struct stat st = { 0 };
 
-
+void ReplaceCharsW(wchar_t* dest, wchar_t* source, wchar_t oldchar, wchar_t newchar)
+{
+    wstring CppSource(source);
+    replace(CppSource.begin(), CppSource.end(), oldchar, newchar);
+    wcscpy(dest, CppSource.c_str());
+}
 
 unsigned short int GetInternalID(unsigned short int CardID, unsigned short int MinCardID)
 {
@@ -772,7 +780,9 @@ int ExportCards(const char* OutFilename)
         if (wcscmp(CARD_GetCardName(i), L"") != 0)
         {
             wprintf(L"Writing: [%d] %s\n", i, CARD_GetCardName(i));
-            fwprintf(fout, L"[%d]\nName = %s\nDescription = %s\nATK = %d\nDEF = %d\nPassword = %d\nCardExistFlag = %d\nKind = %d\nAttr = %d\nLevel = %d\nIcon = %d\nType = %d\nRarity = %d\n\n", i, CARD_GetCardName(i), CARD_GetCardDesc(i), CARD_GetAtk(i), CARD_GetDef(i), CARD_GetPassword(i), CARD_GetCardExistFlag(i), CARD_GetKind(i), CARD_GetAttr(i), CARD_GetLevel(i), CARD_GetIcon(i), CARD_GetType(i), CARD_GetRarity(i));		
+            ReplaceCharsW(CardDescTempBuffer, CARD_GetCardDesc(i), '\n', '^');
+
+            fwprintf(fout, L"[%d]\nName = %s\nDescription = %s\nATK = %d\nDEF = %d\nPassword = %d\nCardExistFlag = %d\nKind = %d\nAttr = %d\nLevel = %d\nIcon = %d\nType = %d\nRarity = %d\n\n", i, CARD_GetCardName(i), CardDescTempBuffer, CARD_GetAtk(i), CARD_GetDef(i), CARD_GetPassword(i), CARD_GetCardExistFlag(i), CARD_GetKind(i), CARD_GetAttr(i), CARD_GetLevel(i), CARD_GetIcon(i), CARD_GetType(i), CARD_GetRarity(i));
             CardWriteCounter++;
         }
     }
@@ -874,7 +884,7 @@ int ImportCards(const char* InFilename)
         endpoint = wcschr(parsercursor, '=') - 5;
         wcsncpy(CardDescTempBuffer, parsercursor, endpoint - parsercursor);
         ImportDB[CardReadCounter].Description = (wchar_t*)calloc(wcslen(CardDescTempBuffer) + 1, sizeof(wchar_t));
-        wcscpy(ImportDB[CardReadCounter].Description, CardDescTempBuffer);
+        ReplaceCharsW(ImportDB[CardReadCounter].Description, CardDescTempBuffer, '^', '\n');
 
         // ATK
         parsercursor = wcschr(parsercursor, '=');
