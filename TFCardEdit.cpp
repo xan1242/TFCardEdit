@@ -140,9 +140,9 @@ char CardKindNames[CARD_KIND_COUNT][16]
     "/Fusion/Effect",
     "/Ritual",
     "/Ritual/Effect",
-    "/Toon",
-    "/Spirit",
-    "/Union",
+    "/Toon/Effect",
+    "/Spirit/Effect",
+    "/Union/Effect",
     "Unknown",
     "Unknown",
     "Unknown",
@@ -1052,6 +1052,8 @@ int main(int argc, char* argv[])
         {
             strcpy(Language, argv[2]);
             bSetLang = true;
+            strcpy(OutTextName, FolderName);
+            strcat(OutTextName, ".ini");
         }
         else
             strcpy(OutTextName, argv[2]);
@@ -1059,7 +1061,7 @@ int main(int argc, char* argv[])
 
     if ((argc < 4) && !bSetLang)
         strcpy(Language, "E");
-    else
+    else if (!bSetLang)
         strcpy(Language, argv[3]);
 
     printf("Loading card database to memory...\n");
