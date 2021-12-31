@@ -779,7 +779,7 @@ int ExportCards(const char* OutFilename)
 {
     FILE* fout = fopen(OutFilename, "wb");
     unsigned int CardWriteCounter = 0;
-    unsigned int CardIDCounter = MinCard_ID;
+    unsigned int CardIDCounter = MinCard_IntID;
 
     if (!fout)
     {
@@ -797,7 +797,7 @@ int ExportCards(const char* OutFilename)
     //for (unsigned int i = MinCard_ID; i <= MaxCard_ID; i++)
     for (unsigned int i = 0; i < IntIDCount; i++)
     {
-        if (wcscmp(CARD_GetCardName(CardIDCounter), L"") != 0)
+        if (GetInternalID(CardIDCounter, MinCard_IntID))
         {
             wprintf(L"Writing: [%d] %s\n", CardIDCounter, CARD_GetCardName(CardIDCounter));
             ReplaceCharsW(CardDescTempBuffer, CARD_GetCardDesc(CardIDCounter), '\n', '^');
