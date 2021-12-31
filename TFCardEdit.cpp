@@ -263,6 +263,15 @@ wchar_t FolderNameWide[1024];
 char OutTextName[1024];
 struct stat st = { 0 };
 
+bool bFileExists(const char* Filename)
+{
+    FILE* fcheck = fopen(Filename, "rb");
+    if (!fcheck)
+        return false;
+    fclose(fcheck);
+    return true;
+}
+
 void ReplaceCharsW(wchar_t* dest, wchar_t* source, wchar_t oldchar, wchar_t newchar)
 {
     wstring CppSource(source);
@@ -472,6 +481,9 @@ unsigned int CARD_GetPassword(unsigned short int CardID)
 }
 
 // TODO: figure out the bit magic for other games...
+// POTENTIAL SUPPORT FOR LEGACY OF THE DUELIST - THIS TOOL CAN GET ALL CARD NAMES AND DESCRIPTIONS OUT OF THAT GAME
+// very similar format, but the card props are different
+// theory says Master Duel might also use this format...
 // 
 // THIS IS BASED ON TF1!
 // 
@@ -737,8 +749,12 @@ int LoadFiles()
     sprintf(FilePath, "%s\\CARD_IntID.bin", FolderName);
     LoadIntIDs(FilePath);
 
+    // card passwords are totally optional
     sprintf(FilePath, "%s\\CARD_Pass.bin", FolderName);
-    LoadCardPasswords(FilePath);
+    if (bFileExists(FilePath))
+        LoadCardPasswords(FilePath);
+    else
+        CardPasswords = (unsigned int*)calloc(IntIDCount, sizeof(unsigned int));
 
     sprintf(FilePath, "%s\\CARD_Prop.bin", FolderName);
     LoadCardProp(FilePath);
@@ -763,6 +779,7 @@ int ExportCards(const char* OutFilename)
 {
     FILE* fout = fopen(OutFilename, "wb");
     unsigned int CardWriteCounter = 0;
+    unsigned int CardIDCounter = MinCard_ID;
 
     if (!fout)
     {
@@ -775,16 +792,20 @@ int ExportCards(const char* OutFilename)
     fputc(0xFF, fout);
     fputc(0xFE, fout);
 
-    for (unsigned int i = MinCard_ID; i <= MaxCard_ID; i++)
+    // not using card IDs for the loop to avoid missing cards...
+    // using internal ids instead...
+    //for (unsigned int i = MinCard_ID; i <= MaxCard_ID; i++)
+    for (unsigned int i = 0; i < IntIDCount; i++)
     {
-        if (wcscmp(CARD_GetCardName(i), L"") != 0)
+        if (wcscmp(CARD_GetCardName(CardIDCounter), L"") != 0)
         {
-            wprintf(L"Writing: [%d] %s\n", i, CARD_GetCardName(i));
-            ReplaceCharsW(CardDescTempBuffer, CARD_GetCardDesc(i), '\n', '^');
+            wprintf(L"Writing: [%d] %s\n", CardIDCounter, CARD_GetCardName(CardIDCounter));
+            ReplaceCharsW(CardDescTempBuffer, CARD_GetCardDesc(CardIDCounter), '\n', '^');
 
-            fwprintf(fout, L"[%d]\nName = %s\nDescription = %s\nATK = %d\nDEF = %d\nPassword = %d\nCardExistFlag = %d\nKind = %d\nAttr = %d\nLevel = %d\nIcon = %d\nType = %d\nRarity = %d\n\n", i, CARD_GetCardName(i), CardDescTempBuffer, CARD_GetAtk(i), CARD_GetDef(i), CARD_GetPassword(i), CARD_GetCardExistFlag(i), CARD_GetKind(i), CARD_GetAttr(i), CARD_GetLevel(i), CARD_GetIcon(i), CARD_GetType(i), CARD_GetRarity(i));
+            fwprintf(fout, L"[%d]\nName = %s\nDescription = %s\nATK = %d\nDEF = %d\nPassword = %d\nCardExistFlag = %d\nKind = %d\nAttr = %d\nLevel = %d\nIcon = %d\nType = %d\nRarity = %d\n\n", CardIDCounter, CARD_GetCardName(CardIDCounter), CardDescTempBuffer, CARD_GetAtk(CardIDCounter), CARD_GetDef(CardIDCounter), CARD_GetPassword(CardIDCounter), CARD_GetCardExistFlag(CardIDCounter), CARD_GetKind(CardIDCounter), CARD_GetAttr(CardIDCounter), CARD_GetLevel(CardIDCounter), CARD_GetIcon(CardIDCounter), CARD_GetType(CardIDCounter), CARD_GetRarity(CardIDCounter));
             CardWriteCounter++;
         }
+        CardIDCounter++;
     }
 
     fclose(fout);
