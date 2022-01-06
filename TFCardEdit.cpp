@@ -800,7 +800,7 @@ int ExportCards(const char* OutFilename)
         if (GetInternalID(CardIDCounter, MinCard_IntID))
         {
             wprintf(L"Writing: [%d] %s\n", CardIDCounter, CARD_GetCardName(CardIDCounter));
-            ReplaceCharsW(CardDescTempBuffer, CARD_GetCardDesc(CardIDCounter), (wchar_t)0x0D, L'˘');
+            ReplaceCharsW(CardDescTempBuffer, CARD_GetCardDesc(CardIDCounter), L'\r', L'˘');
             ReplaceCharsW(CardDescTempBuffer, CardDescTempBuffer, L'\n', L'^');
 
             fwprintf(fout, L"[%d]\nName = %s\nDescription = %s\nATK = %d\nDEF = %d\nPassword = %d\nCardExistFlag = %d\nKind = %d\nAttr = %d\nLevel = %d\nIcon = %d\nType = %d\nRarity = %d\n\n", CardIDCounter, CARD_GetCardName(CardIDCounter), CardDescTempBuffer, CARD_GetAtk(CardIDCounter), CARD_GetDef(CardIDCounter), CARD_GetPassword(CardIDCounter), CARD_GetCardExistFlag(CardIDCounter), CARD_GetKind(CardIDCounter), CARD_GetAttr(CardIDCounter), CARD_GetLevel(CardIDCounter), CARD_GetIcon(CardIDCounter), CARD_GetType(CardIDCounter), CARD_GetRarity(CardIDCounter));
@@ -906,7 +906,8 @@ int ImportCards(const char* InFilename)
         endpoint = wcschr(parsercursor, '=') - 5;
         wcsncpy(CardDescTempBuffer, parsercursor, endpoint - parsercursor);
         ImportDB[CardReadCounter].Description = (wchar_t*)calloc(wcslen(CardDescTempBuffer) + 1, sizeof(wchar_t));
-        ReplaceCharsW(ImportDB[CardReadCounter].Description, CardDescTempBuffer, '^', '\n');
+        ReplaceCharsW(CardDescTempBuffer, CardDescTempBuffer, L'˘', '\r');
+        ReplaceCharsW(ImportDB[CardReadCounter].Description, CardDescTempBuffer, L'^', '\n');
 
         // ATK
         parsercursor = wcschr(parsercursor, '=');
