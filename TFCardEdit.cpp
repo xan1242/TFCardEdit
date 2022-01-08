@@ -625,7 +625,7 @@ int LoadFiles()
     if (bFileExists(FilePath))
         LoadCardPasswords(FilePath);
     else
-        CardPasswords = (int32_t*)calloc(IntIDCount, sizeof(unsigned int));
+        CardPasswords = (int32_t*)calloc(IntIDCount, sizeof(int32_t));
 
     sprintf(FilePath, "%s\\CARD_Prop.bin", FolderName);
     LoadCardProp(FilePath);
