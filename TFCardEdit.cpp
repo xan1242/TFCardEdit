@@ -4,6 +4,7 @@
 #include <iostream>
 #include <algorithm>
 #include <string>
+#include <stdint.h>
 using namespace std;
 
 #define TF1_MINCARD_INTID 4000
@@ -51,6 +52,19 @@ Language - Sets the LANG extension in the filenames above (default: E)\n"
 
 #define TFCD_HELPMESSAGE_VARS argv[0], argv[0]
 
+#if _WIN64
+#define pcast int64_t
+#else
+#if __GNUC__
+#if __x86_64__ || __ppc64__ || __MINGW64__ || __aarch64__
+#define pcast int64_t
+#endif
+#else
+#define pcast int32_t
+#endif
+#define pcast int32_t
+#endif
+
 struct CardPair
 {
     wchar_t* Name;
@@ -59,180 +73,25 @@ struct CardPair
 
 struct CardProp
 {
-    unsigned int Prop1;
-    unsigned int Prop2;
+    int32_t Prop1;
+    int32_t Prop2;
 }*CardProps;
-
-
-// using TF1 as a base for now...
-#define MONSTER_TYPE_COUNT 23
-enum MonsterTypes
-{
-    None,
-    Dragon,
-    Zombie,
-    Fiend,
-    Pyro,
-    SeaSerpent,
-    Rock,
-    Machine,
-    Fish,
-    Insect,
-    Beast,
-    BeastWarrior,
-    Plant,
-    Aqua,
-    Warrior,
-    WingedBeast,
-    Fairy,
-    Thunder,
-    Spellcaster,
-    Reptile
-};
-
-char MonsterTypeNames[MONSTER_TYPE_COUNT][16] =
-{
-    "None",
-    "Dragon",
-    "Zombie",
-    "Fiend",
-    "Pyro",
-    "Sea Serpent",
-    "Rock",
-    "Machine",
-    "Fish",
-    "Dinosaur",
-    "Insect",
-    "Beast",
-    "Beast-Warrior",
-    "Plant",
-    "Aqua",
-    "Warrior",
-    "Winged Beast",
-    "Fairy",
-    "Spellcaster",
-    "Thunder",
-    "Reptile",
-    "Divine-Beast"
-};
-
-#define CARD_KIND_COUNT 14
-enum CardKinds
-{
-    Normal,
-    Effect,
-    Fusion,
-    FusionEffect,
-    Ritual,
-    RitualEffect,
-    Toon,
-    Spirit,
-    Union,
-    Spell = 13,
-    Trap = 14
-};
-
-char CardKindNames[CARD_KIND_COUNT][16]
-{
-    "Normal" // never used
-    "/Effect",
-    "/Fusion",
-    "/Fusion/Effect",
-    "/Ritual",
-    "/Ritual/Effect",
-    "/Toon/Effect",
-    "/Spirit/Effect",
-    "/Union/Effect",
-    "Unknown",
-    "Unknown",
-    "Unknown",
-    "Unknown",
-    "Spell",
-    "Trap"
-};
-
-#define CARD_RARITY_COUNT 5
-enum CardRarity
-{
-    Common,
-    Rare,
-    SuperRare,
-    UltraRare,
-    UltimateRare
-};
-
-char CardRarityNames[CARD_RARITY_COUNT][16]
-{
-    "Common",
-    "Rare",
-    "SuperRare",
-    "UltraRare",
-    "UltimateRare"
-};
-
-#define CARD_ATTRIBUTE_COUNT 9
-enum CardAttributes
-{
-    LIGHT,
-    DARK,
-    WATER,
-    FIRE,
-    EARTH,
-    WIND,
-    DIVINE,
-    SPELL,
-    TRAP
-};
-
-char CardAttributeNames[CARD_ATTRIBUTE_COUNT][8]
-{
-    "LIGHT",
-    "DARK",
-    "WATER",
-    "FIRE",
-    "EARTH",
-    "WIND",
-    "DIVINE",
-    "SPELL",
-    "TRAP"
-};
-
-#define CARD_ICON_COUNT 6
-enum CardIcons
-{
-    Counter,
-    Field,
-    Equip,
-    Continuous,
-    QuickPlay,
-    RitualSpell
-};
-
-char CardIconNames[CARD_ICON_COUNT][16]
-{
-    "Counter",
-    "Field",
-    "Equip",
-    "Continuous",
-    "Quick-Play",
-    "Ritual"
-};
 
 struct CardImporter
 {
-    unsigned int CardID;
+    int32_t CardID;
     wchar_t* Name;
     wchar_t* Description;
-    unsigned int Password;
-    unsigned int ATK;
-    unsigned int DEF;
-    unsigned int CardExistFlag;
-    unsigned int Kind;
-    unsigned int Attr;
-    unsigned int Level;
-    unsigned int Icon;
-    unsigned int Type;
-    unsigned int Rarity;
+    int32_t Password;
+    int32_t ATK;
+    int32_t DEF;
+    int32_t CardExistFlag;
+    int32_t Kind;
+    int32_t Attr;
+    int32_t Level;
+    int32_t Icon;
+    int32_t Type;
+    int32_t Rarity;
 }*ImportDB, NullCard = {0};
 
 void* ImportedFile;
@@ -245,14 +104,14 @@ wchar_t* StringBufferName;
 wchar_t* StringBufferDesc;
 unsigned int CardCount = 0;
 
-unsigned short int* IntIDs;
+int16_t* IntIDs;
 unsigned int IntIDCount;
 short int MinCard_IntID = TF1_MINCARD_INTID;
 
 short int MinCard_ID = TF1_MINCARD_ID;
 short int MaxCard_ID = TF1_MAXCARD_ID;
 
-unsigned int* CardPasswords;
+int32_t* CardPasswords;
 
 char Language[8];
 char FilePath[1024];
@@ -279,7 +138,7 @@ void ReplaceCharsW(wchar_t* dest, wchar_t* source, wchar_t oldchar, wchar_t newc
     wcscpy(dest, CppSource.c_str());
 }
 
-unsigned short int GetInternalID(unsigned short int CardID, unsigned short int MinCardID)
+int16_t GetInternalID(int16_t CardID, int16_t MinCardID)
 {
     if (CardID < MinCardID)
         return 0;
@@ -303,7 +162,7 @@ int LoadIntIDs(const char* IntIDFilename)
     }
 
 
-    IntIDs = (unsigned short int*)malloc(st.st_size);
+    IntIDs = (int16_t*)malloc(st.st_size);
     fread(IntIDs, sizeof(char), st.st_size, fintid);
 
     IntIDCount = st.st_size / 2;
@@ -312,9 +171,9 @@ int LoadIntIDs(const char* IntIDFilename)
     return 0;
 }
 
-bool bCheckIfCardExists(unsigned int CardID)
+bool bCheckIfCardExists(int32_t CardID)
 {
-    for (unsigned int i = 0; i < ImportedCardsCount; i++)
+    for (int32_t i = 0; i < ImportedCardsCount; i++)
     {
         if (ImportDB[i].CardID == CardID)
             return true;
@@ -327,7 +186,7 @@ int CreateIntIDs(const char* IntIDFilename)
     unsigned int IntIDsize = ((MaxCard_ID - MinCard_IntID) * 2) + 2;
     unsigned int IntIDcounter = 1;
 
-    IntIDs = (unsigned short int*)malloc(IntIDsize);
+    IntIDs = (int16_t*)malloc(IntIDsize);
     for (unsigned int i = MinCard_IntID; i <= MaxCard_ID; i++)
     {
         if (bCheckIfCardExists(i))
@@ -370,7 +229,7 @@ int LoadCardPasswords(const char* PassFilename)
     }
 
 
-    CardPasswords = (unsigned int*)malloc(st.st_size);
+    CardPasswords = (int32_t*)malloc(st.st_size);
     fread(CardPasswords, sizeof(char), st.st_size, fpass);
 
     fclose(fpass);
@@ -379,7 +238,7 @@ int LoadCardPasswords(const char* PassFilename)
 
 int CreateCardPasswords(const char* PassFilename)
 {
-    CardPasswords = (unsigned int*)calloc(ImportedCardsCount + 1, sizeof(int));
+    CardPasswords = (int32_t*)calloc(ImportedCardsCount + 1, sizeof(int32_t));
     for (unsigned int i = 0; i < ImportedCardsCount; i++)
         CardPasswords[i + 1] = ImportDB[i].Password;
 
@@ -391,7 +250,7 @@ int CreateCardPasswords(const char* PassFilename)
         return -1;
     }
 
-    fwrite(CardPasswords, sizeof(int), ImportedCardsCount + 1, fpass);
+    fwrite(CardPasswords, sizeof(int32_t), ImportedCardsCount + 1, fpass);
 
     fclose(fpass);
     return 0;
@@ -510,76 +369,69 @@ unsigned int CARD_GetPassword(unsigned short int CardID)
 
 
 // Prop1 stuff
-unsigned int CARD_GetAtk(unsigned short int CardID)
+int32_t CARD_GetAtk(int16_t CardID)
 {
-    unsigned int atk = (CardProps[GetInternalID(CardID, MinCard_IntID)].Prop1 & 0x3FE000) >> 13;
+    int32_t atk = (CardProps[GetInternalID(CardID, MinCard_IntID)].Prop1 & 0x3FE000) >> 13;
     //if (atk == 511)
     //    return 0;
     return atk * 10;
 }
 
-unsigned int CARD_GetDef(unsigned short int CardID)
+int32_t CARD_GetDef(int16_t CardID)
 {
-    unsigned int def = (CardProps[GetInternalID(CardID, MinCard_IntID)].Prop1 & 0x7FC00000) >> 22;
+    int32_t def = (CardProps[GetInternalID(CardID, MinCard_IntID)].Prop1 & 0x7FC00000) >> 22;
    // if (def == 511)
     //    return 0;
     return def * 10;
 }
 
-unsigned int CARD_GetCardExistFlag(unsigned short int CardID)
+int32_t CARD_GetCardExistFlag(int16_t CardID)
 {
     return (CardProps[GetInternalID(CardID, MinCard_IntID)].Prop1 & 0x80000000) >> 31;
 }
 
-unsigned short int CARD_GetCardID(unsigned short int InternalID)
+int16_t CARD_GetCardID(int16_t InternalID)
 {
     return (CardProps[InternalID].Prop1 & 0x1FFF);
 }
 
 // Prop2 stuff
-unsigned int CARD_GetKind(unsigned short int CardID)
+int32_t CARD_GetKind(int16_t CardID)
 {
     return (CardProps[GetInternalID(CardID, MinCard_IntID)].Prop2 & 0xF);
 }
 
-unsigned int CARD_GetAttr(unsigned short int CardID)
+int32_t CARD_GetAttr(int16_t CardID)
 {
     return (CardProps[GetInternalID(CardID, MinCard_IntID)].Prop2 & 0xF0) >> 4;
 }
 
-unsigned int CARD_GetLevel(unsigned short int CardID)
+int32_t CARD_GetLevel(int16_t CardID)
 {
     return (CardProps[GetInternalID(CardID, MinCard_IntID)].Prop2 & 0xF00) >> 8;
 }
 
-unsigned int CARD_GetIcon(unsigned short int CardID)
+int32_t CARD_GetIcon(int16_t CardID)
 {
     return (CardProps[GetInternalID(CardID, MinCard_IntID)].Prop2 & 0x7000) >> 12;
 }
 
-unsigned int CARD_GetType(unsigned short int CardID)
+int32_t CARD_GetType(int16_t CardID)
 {
     return (CardProps[GetInternalID(CardID, MinCard_IntID)].Prop2 & 0xF8000) >> 15;
 }
 
-unsigned int CARD_GetRarity(unsigned short int CardID)
+int32_t CARD_GetRarity(int16_t CardID)
 {
     return (CardProps[GetInternalID(CardID, MinCard_IntID)].Prop2 & 0xF00000) >> 20;
 }
 
-const char* ReturnMonsterTypeName(unsigned int Type)
-{
-    if (Type < MONSTER_TYPE_COUNT)
-        return MonsterTypeNames[Type];
-    return "Unknown";
-}
-
-unsigned short int GetMaxCardID()
+int16_t GetMaxCardID()
 {
     return CARD_GetCardID(IntIDs[IntIDCount - 1]);
 }
 
-unsigned short int GetMinCardID()
+int16_t GetMinCardID()
 {
     return CARD_GetCardID(1);
 }
@@ -616,8 +468,19 @@ int ParseCardNames(const char* IndexFilename, const char* NamesFilename, const c
         return -1;
     }
 
-    CardIndex = (CardPair*)malloc(st.st_size);
-    fread(CardIndex, st.st_size, 1, findex);
+    // x64 fix... read every pointer until the end of file individually
+    // also abstract the sizes so that it fits in the data structures in memory...
+
+    int CardIndexCounter = 0;
+    CardIndex = (CardPair*)calloc(st.st_size, sizeof(wchar_t*) * 2);
+    while (!feof(findex))
+    {
+        fread(&CardIndex[CardIndexCounter].Name, sizeof(int32_t), 1, findex);
+        fread(&CardIndex[CardIndexCounter].Description, sizeof(int32_t), 1, findex);
+        ++CardIndexCounter;
+    }
+    
+    //fread(CardIndex, st.st_size, 1, findex);
     fclose(findex);
 
     CardCount = st.st_size / 8;
@@ -644,10 +507,12 @@ int ParseCardNames(const char* IndexFilename, const char* NamesFilename, const c
     fclose(fdesc);
 
     // shift indexes according to the memory locations...
+    // define the pointer data caster in compiler for multiplat compat...
+
     for (unsigned int i = 0; i < CardCount; i++)
     {
-        CardIndex[i].Name = (wchar_t*)((int)StringBufferName + (int)CardIndex[i].Name);
-        CardIndex[i].Description = (wchar_t*)((int)StringBufferDesc + (int)CardIndex[i].Description);
+        CardIndex[i].Name = (wchar_t*)((pcast)CardIndex[i].Name + (pcast)StringBufferName);
+        CardIndex[i].Description = (wchar_t*)((pcast)CardIndex[i].Description + (pcast)StringBufferDesc);
     }
 
     return 0;
@@ -715,9 +580,15 @@ int CreateCardNames(const char* IndexFilename, const char* NamesFilename, const 
         perror("ERROR");
         return -1;
     }
-    fwrite(CardIndex, sizeof(CardPair), ImportedCardsCount + 1, findex);
-    fwrite(&NamesSize, sizeof(int), 1, findex);
-    fwrite(&DescsSize, sizeof(int), 1, findex);
+
+    for (int i = 0; i < ImportedCardsCount + 1; i++)
+    {
+        fwrite(&CardIndex[i].Name, sizeof(int32_t), 1, findex);
+        fwrite(&CardIndex[i].Description, sizeof(int32_t), 1, findex);
+    }
+
+    fwrite(&NamesSize, sizeof(int32_t), 1, findex);
+    fwrite(&DescsSize, sizeof(int32_t), 1, findex);
     fclose(findex);
 
 
@@ -754,7 +625,7 @@ int LoadFiles()
     if (bFileExists(FilePath))
         LoadCardPasswords(FilePath);
     else
-        CardPasswords = (unsigned int*)calloc(IntIDCount, sizeof(unsigned int));
+        CardPasswords = (int32_t*)calloc(IntIDCount, sizeof(unsigned int));
 
     sprintf(FilePath, "%s\\CARD_Prop.bin", FolderName);
     LoadCardProp(FilePath);
@@ -852,7 +723,7 @@ int ImportCards(const char* InFilename)
     fclose(fin);
 
     // min number is easy - just get it off the top of the file...
-    swscanf((wchar_t*)ImportedFile, L"[%d]\n", &MinCard_ID);
+    swscanf((wchar_t*)ImportedFile, L"[%hd]\n", &MinCard_ID);
 
     // check for TF1 compatibility...
     if (MinCard_ID == 4007)
@@ -863,7 +734,7 @@ int ImportCards(const char* InFilename)
     // max number is where things go just a little crazy - we're gonna read the file BACKWARDS until we find the '[' char so we can read it out
     for (MaxIDReadingPos = 2; MaxIDReadingPos < ImportedFileSize; MaxIDReadingPos += 2)
     {
-        MaxIDPos = (wchar_t*)((int)(ImportedFile) + ImportedFileSize - MaxIDReadingPos);
+        MaxIDPos = (wchar_t*)((pcast)(ImportedFile) + ImportedFileSize - MaxIDReadingPos);
         if (*MaxIDPos == L'[')
             break;
     }
@@ -873,7 +744,7 @@ int ImportCards(const char* InFilename)
     // we do this by checking how many '[' are there in the file...
     while (cursorpos < ImportedFileSize)
     {
-        ReadCh = *(wchar_t*)((int)(ImportedFile) + cursorpos);
+        ReadCh = *(wchar_t*)((pcast)(ImportedFile) + cursorpos);
         cursorpos += 2;
         if (ReadCh == L'[')
             ImportedCardsCount++;
