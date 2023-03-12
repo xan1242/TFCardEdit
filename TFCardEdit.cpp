@@ -675,7 +675,8 @@ int ListCardIDs(int inMinCardID, int inMaxCardID, char* outFilename)
     for (int i = MinCard_ID; i < MaxCard_ID; i++)
     {
         uint32_t Password = CARD_GetPassword(i);
-        if (Password)
+
+        if (GetInternalID(i, MinCard_ID))
         {
             fprintf(fout, "%d = %08d\n", i, Password);
         }
